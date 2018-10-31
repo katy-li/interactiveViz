@@ -5,14 +5,16 @@ function buildMetadata(sample) {
   // Use `d3.json` to fetch the metadata for a sample
     // Use d3 to select the panel with id of `#sample-metadata`
 
-  d3.json(`/metadata/${sample}`).then(function(data){
+  d3.json(`/metadata/${sample}`).then(function(data) {
           // Use `.html("") to clear any existing metadata
     var DataCue = d3.select("#sample-metadata");
     DataCue.html("");
   // Use `Object.entries` to add each key and value pair to the panel
   // Hint: Inside the loop, you will need to use d3 to append new
   // tags for each key-value in the metadata.
-      Object.entries(data).forEach(function([key, value]){
+      var response = data;
+
+      Object.entries(data).forEach(function([key, value]) {
         DataCue.append("h6").text(`${key}:${value}`);
       console.log(key,value);
       });  
@@ -29,31 +31,36 @@ function buildCharts(sample) {
     // use sample_values for marker size
     // use otu_ids for the marker colors
     // use otu_labels for the text values
-  d3.json(`/samples/${sample}`).then(function(data){
-    var otu_ids = data.otu_ids;
-    var otu_labels = data.otu_labels;
-    var sample_values = data.sample_values;
+  d3.json(`/samples/${sample}`).then(function(Chartdata){
+    var clearcharts = d3.select("#pie");
+    clearcharts.html("");
+    var otu_ids = Chartdata.otu_ids;
+    var otu_labels = Chartdata.otu_labels;
+    var sample_values = Chartdata.sample_values;
 
     var bubbleLayout = {
       xaxis: {
         title: "OTU ID"
       },
-      hovermode : "closest",
-      margin : [t:0],
+      hovermode: "closest",
+      margin: {t:0}
     };
 
     var bubble_data = {
       x: otu_ids,
       y: sample_values,
-      type: bubble,
-      mode: "markers",
+      mode: 'markers',
+      type: 'scatter',
       marker: {
         size: sample_values,
-        color : otu_values,
+        color : otu_ids,
         colorscale : "Earth"
       },
+      text: otu_labels
     };
-    Plotly.plot("bubble", bubble_data, bubbleLayout)
+
+    var bubble_chart = [bubble_data]
+    Plotly.plot("bubble", bubble_chart, bubbleLayout);
 
         // @TODO: Build a Pie Chart
     // HINT: You will need to use slice() to grab the top 10 sample_values,
@@ -65,19 +72,22 @@ function buildCharts(sample) {
       xaxis: {
         title: "Pie Chart Name Here",
       },
-      margin: [t,0],
+      margin: {t:0}
     };
-    var pie_data = {
-      value : sample_values.slice(0,10),
-      labels: otu_ids
-    };
-    Plotly.plot("pie", pie_data, pieLayout)
+    var pie_data = [{
+      values : sample_values.slice(0,10),
+      labels: otu_ids.slice(0,10),
+      hovertext:otu_labels.slice(0,10),
+      hoverinfo: "hovertext",
+      text: otu_labels.slice(0,10),
+      type: "pie"
+    }];
+    Plotly.plot("pie", pie_data, pieLayout);
     
-});
+    });
+};
 
-
-  buildPlots();
-
+  // buildPlots();
 
 function init() {
   // Grab a reference to the dropdown select element
@@ -97,13 +107,14 @@ function init() {
     buildCharts(firstSample);
     buildMetadata(firstSample);
   });
-}
+};
+
 
 function optionChanged(newSample) {
   // Fetch new data each time a new sample is selected
   buildCharts(newSample);
   buildMetadata(newSample);
-}
+};
 
 // Initialize the dashboard
 init();
